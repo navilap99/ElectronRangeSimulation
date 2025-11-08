@@ -54,7 +54,10 @@ int main(int argc, char** argv){
         // Custom energies
         for (double index = indexMin; index <= (indexMax + energyStep); index += energyStep) {
 
-            energies.push_back(std::pow(10, index));
+            double energy = std::pow(10, index);
+            double energyToPush = energy * ( 1 - 1/( 1 + 2*energy/0.511 ) );
+
+            energies.push_back(energyToPush);
 
         }
 
