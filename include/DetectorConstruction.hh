@@ -26,7 +26,7 @@ namespace B1{
 
         protected:
 
-            G4double sphereRadius = 1. * m;
+            G4double sphereRadius = 2. * m;
             G4LogicalVolume* fScoringVolume = nullptr;
 
     };

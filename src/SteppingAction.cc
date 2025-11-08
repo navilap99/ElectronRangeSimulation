@@ -38,7 +38,7 @@ namespace B1{
         if (track->GetParentID() == 0) {
             
             G4double stepLength = step->GetStepLength();
-            fEventAction->addDistance(stepLength / cm);
+            fEventAction->addDistance(stepLength);
 
         }
 
