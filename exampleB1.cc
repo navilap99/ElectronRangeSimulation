@@ -16,44 +16,49 @@
 #include "G4EmStandardPhysics_option3.hh"
 #include "G4UnitsTable.hh"
 
+#include <filesystem>
+#include <vector>
+
 using namespace B1;
 
 int main(int argc, char** argv){
 
-    std::cout<< argc << "\n";
+    G4RunManager* runManager = nullptr;
 
-    // Run parameters
-    G4double energyMin = 0.;
-    G4double energyMax = 0.;
-    G4double energyStep = 0.;
-    G4int nEvents = 1;
-
-    G4double indexMin = 0.;
-    G4double indexMax = 0.;
+    std::vector<double> energies;
+    int nEvents = 0;
 
     // Detect interactive mode and define UI session
     G4UIExecutive* ui = nullptr;
     if (argc == 1) {
 
         ui = new G4UIExecutive(argc, argv);
+        runManager = G4RunManagerFactory::CreateRunManager(G4RunManagerType::SerialOnly);
 
     }
 
     else{
 
-        // Run parameters
-        energyMin = std::stod(argv[1]) * MeV;
-        energyMax = std::stod(argv[2]) * MeV;
-        energyStep = std::stod(argv[3]) * MeV;
-        nEvents = std::stoi(argv[4]);
+        runManager = G4RunManagerFactory::CreateRunManager(G4RunManagerType::Default);
 
-        indexMin = std::log10(energyMin/MeV);
-        indexMax = std::log10(energyMax/MeV);
+        // Run parameters
+
+        G4double energyMin = 0.01 * MeV;
+        G4double energyMax = 10 * MeV;
+        double energyStep = 0.1;
+        nEvents = std::stoi(argv[1]);
+
+        double indexMin = std::log10(energyMin / MeV);
+        double indexMax = std::log10(energyMax / MeV);
+
+        // Custom energies
+        for (double index = indexMin; index <= (indexMax + energyStep); index += energyStep) {
+
+            energies.push_back(std::pow(10, index));
+
+        }
 
     }
-
-    // RunManager
-    auto runManager = G4RunManagerFactory::CreateRunManager(G4RunManagerType::SerialOnly); //SerialOnly or Default
 
     // DetectorConstruction
     runManager->SetUserInitialization(new DetectorConstruction());
@@ -79,16 +84,42 @@ int main(int argc, char** argv){
     // Get the pointer to the User Interface manager
     auto UImanager = G4UImanager::GetUIpointer();
 
+    // **********
+    // Output file
+    // **********
+
+    std::string filename = "output.txt";
+    if (!std::filesystem::exists(filename)) {
+
+        std::ofstream newFile(filename);
+
+        if (newFile.is_open()) {
+
+            newFile << "electronEnergy / MeV" << "\t" << "range / cm" << "\t" << "dRange / cm" << "\n";
+            newFile.close();
+            
+        } 
+    }
+
     // Process macro or start UI session
     if (!ui) {
 
         // Batch mode
-        for (G4double index = indexMin; index <= (indexMax + energyStep); index += energyStep) {
+        for (double e : energies) {
 
-            G4double energy = std::pow(10, index);
+            G4double energy = e;
+
+            if (std::filesystem::exists(filename)) {
+
+                std::ofstream file;
+                file.open(filename, std::ios::app);
+                file << energy / MeV << "\t";
+                file.close();
+
+            }
 
             std::cout << energy << "\n";
-            UImanager->ApplyCommand("/gun/particle gamma");
+            UImanager->ApplyCommand("/gun/particle e-");
             std::ostringstream energyCmd;
             energyCmd << "/gun/energy " << G4BestUnit(energy, "Energy");
             std::cout << energyCmd.str() << "\n";
@@ -101,7 +132,7 @@ int main(int argc, char** argv){
             << G4endl
             << "------------------------------------------------------------"
             << G4endl
-            << "The run consists of " << nEvents << " gammas of energy " << G4BestUnit(energy, "Energy")
+            << "The run consists of " << nEvents << " electrons of energy " << G4BestUnit(energy, "Energy")
             << G4endl;
 
             UImanager->ApplyCommand(beamOnCmd.str());

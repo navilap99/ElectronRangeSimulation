@@ -15,6 +15,8 @@
 #include "G4SystemOfUnits.hh"
 #include "G4UnitsTable.hh"
 
+#include <filesystem>
+
 namespace B1{
 
     RunAction::RunAction(){
@@ -51,10 +53,21 @@ namespace B1{
             G4double rmsDistance = meanDistance2 - pow(meanDistance, 2.0);
             if (rmsDistance > 0.) rmsDistance = std::sqrt(rmsDistance); else rmsDistance = 0.;
 
+            // Write output file
+            std::string filename = "output.txt";
+            if (std::filesystem::exists(filename)) {
+
+                std::ofstream file;
+                file.open(filename, std::ios::app);
+                file << meanDistance / cm << "\t" << rmsDistance / cm << "\n";
+                file.close();
+
+            }
+
             // Print
             G4cout
             << "Mean traveled distance: "
-            << meanDistance << " cm with rms = " << rmsDistance
+            << meanDistance / cm << " cm with rms = " << rmsDistance / cm
             << G4endl
             << "------------------------------------------------------------"
             << G4endl
